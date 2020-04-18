@@ -20,3 +20,4 @@ repo-info
 
 # reports
 report/*
+htmlcov/*
