@@ -21,3 +21,6 @@ repo-info
 # reports
 report/*
 htmlcov/*
+
+# Test resources
+tests/functional/tests/resources/*

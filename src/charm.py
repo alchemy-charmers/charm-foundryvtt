@@ -6,12 +6,15 @@
 """Operator Charm main library."""
 # Load modules from lib directory
 import logging
+from zipfile import BadZipFile
 
 import setuppath  # noqa:F401
+from charmhelpers.core import host
+from lib_foundry import FoundryHelper
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
-from ops.model import ActiveStatus, MaintenanceStatus
+from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, ModelError
 
 
 class FoundryvttCharm(CharmBase):
@@ -30,11 +33,42 @@ class FoundryvttCharm(CharmBase):
         self.state.set_default(installed=False)
         self.state.set_default(configured=False)
         self.state.set_default(started=False)
+        # Setup helper
+        self.helper = FoundryHelper(self.model.config, self.state)
 
     def on_install(self, event):
         """Handle install state."""
         self.unit.status = MaintenanceStatus("Installing charm software")
         # Perform install tasks
+        zip_path = None
+        try:
+            zip_path = self.model.resources.fetch("foundryvtt")
+        except ModelError:
+            self.unit.status = BlockedStatus("Upload foundryvtt resource to proceed")
+            logging.warning(
+                "No install resource available, install blocked, deferring event: {}".format(
+                    event.handle
+                )
+            )
+            self._defer_once(event)
+
+            return
+        # Install the resource
+        try:
+            self.helper.install_zip(zip_path)
+        except BadZipFile:
+            self.unit.status = BlockedStatus("Bad zip file, upload a new resource")
+            logging.error(
+                "Could not install resource, deferring event: {}".format(event.handle)
+            )
+            self._defer_once(event)
+
+            return
+        self.unit.status = MaintenanceStatus("Installing dependencies")
+        logging.info("Installing dependencies")
+        self.helper.add_sources()
+        self.helper.install_dependencies()
+        self.helper.install_systemd_service()
         self.unit.status = MaintenanceStatus("Install complete")
         logging.info("Install of software complete")
         self.state.installed = True
@@ -43,14 +77,20 @@ class FoundryvttCharm(CharmBase):
         """Handle config changed."""
 
         if not self.state.installed:
-            logging.warning("Config changed called before install complete, deferring event: {}.".format(event.handle))
+            logging.warning(
+                "Config changed called before install complete, deferring event: {}.".format(
+                    event.handle
+                )
+            )
             self._defer_once(event)
 
             return
 
         if self.state.started:
             # Stop if necessary for reconfig
-            logging.info("Stopping for configuration, event handle: {}".format(event.handle))
+            logging.info(
+                "Stopping for configuration, event handle: {}".format(event.handle)
+            )
         # Configure the software
         logging.info("Configuring")
         self.state.configured = True
@@ -59,12 +99,17 @@ class FoundryvttCharm(CharmBase):
         """Handle start state."""
 
         if not self.state.configured:
-            logging.warning("Start called before configuration complete, deferring event: {}".format(event.handle))
+            logging.warning(
+                "Start called before configuration complete, deferring event: {}".format(
+                    event.handle
+                )
+            )
             self._defer_once(event)
 
             return
         self.unit.status = MaintenanceStatus("Starting charm software")
         # Start software
+        host.service_start(self.helper.service_name)
         self.unit.status = ActiveStatus("Unit is ready")
         self.state.started = True
         logging.info("Started")
@@ -75,14 +120,18 @@ class FoundryvttCharm(CharmBase):
         handle = str(event.handle)
 
         for event_path, _, _ in self.framework._storage.notices(None):
-            if event_path.startswith(handle.split('[')[0]):
+            if event_path.startswith(handle.split("[")[0]):
                 notice_count += 1
                 logging.debug("Found event: {} x {}".format(event_path, notice_count))
 
         if notice_count > 1:
-            logging.debug("Not deferring {} notice count of {}".format(handle, notice_count))
+            logging.debug(
+                "Not deferring {} notice count of {}".format(handle, notice_count)
+            )
         else:
-            logging.debug("Deferring {} notice count of {}".format(handle, notice_count))
+            logging.debug(
+                "Deferring {} notice count of {}".format(handle, notice_count)
+            )
             event.defer()
 
 

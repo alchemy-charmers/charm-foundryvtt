@@ -1,0 +1,14 @@
+[Unit]
+# Auto-generated, DO NOT EDIT
+Description=Service for FoundryVTT
+Wants=network.target
+
+[Service]
+ExecStart=/usr/bin/node {{install_path}}/resources/app/main.js --dataPath={{data_path}}
+SyslogIdentifier=foundryvtt
+Restart=on-failure
+TimeoutStopSec=30
+Type=simple
+
+[Install]
+WantedBy=multi-user.target

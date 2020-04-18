@@ -8,6 +8,9 @@
 import os
 import tempfile
 import unittest
+from pathlib import Path
+
+import yaml
 
 import setuppath  # noqa:F401
 import mock
@@ -50,6 +53,19 @@ class OperatorTestCase(unittest.TestCase):
 
     def setUp(self):
         """Setup test fixture."""
+        # Mock config_get to return deafult config
+        with open(ops.main._get_charm_dir() / Path("config.yaml"), "r") as config_file:
+            config = yaml.safe_load(config_file)
+        charm_config = {}
+
+        for key, _ in config["options"].items():
+            charm_config[key] = config["options"][key]["default"]
+        config_patcher = mock.patch(
+            "ops.model.ModelBackend.config_get", lambda x: charm_config
+        )
+        self.mock_config = config_patcher.start()
+        self.addCleanup(config_patcher.stop)
+
         # Create a charm instance
         model_backend = ops.model.ModelBackend()
         ops.main.setup_root_logging(model_backend)

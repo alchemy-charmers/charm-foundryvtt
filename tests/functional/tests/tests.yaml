@@ -1,17 +1,19 @@
 tests:
 # - bionic_model:
 #   - zaza.charm_tests.noop.tests.NoopTestBionic
-# - xenial_model:
-#   - zaza.charm_tests.noop.tests.NoopTestXenial
  - zaza.charm_tests.noop.tests.NoopTest
+ - tests.modules.foundry.ResourceTests
+# configure:
+#  - zaza.charm_tests.noop.setup.basic_setup
+target_deploy_status:
+    foundry-vtt:
+        workload-status: blocked
+        workload-status-message: Upload foundryvtt resource to proceed 
 configure:
 # - bionic_model:
 #   - zaza.charm_tests.noop.setup.basic_setup_bionic
-# - xenial_model:
-#   - zaza.charm_tests.noop.setup.basic_setup_xenial
  - zaza.charm_tests.noop.setup.basic_setup
 gate_bundles:
-    - xenial
     - bionic
 smoke_bundles:
     - focal

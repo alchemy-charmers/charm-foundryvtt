@@ -10,7 +10,11 @@ tags:
     - misc
 series:
     - bionic
-    - xenial
+resources:
+    foundryvtt:
+        type: file
+        filename: foundryvtt.zip
+        description: foundry zip file
 # -- example relations, delete if unneeded
 #requires:
 #    db:
