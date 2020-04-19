@@ -33,10 +33,10 @@ certificate which the HAProxy charm can register for you via letsencrypt. See th
 
 There are config settings on this charm to allow some customization of the proxy
 configuration.
-* proxy_subdomain: Can be used to customize the subdomain if you run multiple servers.
-* proxy_port: Can be set to 80 if you do not want to use TLS but is **highly discouraged** as
+ - proxy_subdomain: Can be used to customize the subdomain if you run multiple servers.
+ - proxy_port: Can be set to 80 if you do not want to use TLS but is **highly discouraged** as
   your user credentials will not be encrypted if you do this.
-* proxy_via_fqdn: Setting to false will register the IP instead of the fqdn with HAProxy.
+ - proxy_via_fqdn: Setting to false will register the IP instead of the fqdn with HAProxy.
   This is useful if you are installing in an environment that lacks DNS but has static IP
   assignments.
 
