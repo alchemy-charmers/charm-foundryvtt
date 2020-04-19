@@ -9,6 +9,8 @@ target_deploy_status:
     foundry-vtt:
         workload-status: blocked
         workload-status-message: Upload foundryvtt resource to proceed 
+    haproxy:
+        workload-status-message: ""
 configure:
 # - bionic_model:
 #   - zaza.charm_tests.noop.setup.basic_setup_bionic

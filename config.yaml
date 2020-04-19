@@ -1,4 +1,16 @@
 options:
+    proxy_subdomain:
+        type: string
+        description: "Subdomain to register with reverse proxy"
+        default: "foundry"
+    proxy_port:
+        type: int
+        description: "Extrenal port to request from the proxy. Default to 443 for TLS"
+        default: 443
+    proxy_via_fqdn:
+        type: boolean
+        description: "Regsiter the proxy via fqdn, if set to false ip address will be used instead."
+        default: True
     node_repo:
         type: string
         description: "Repository to install node from"

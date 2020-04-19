@@ -12,8 +12,7 @@ from zipfile import BadZipFile
 import setuppath  # noqa:F401
 from charmhelpers.core import host
 from interface_reverseproxy.operator_requires import (
-    ProxyConfig,
-    # ProxyConfigError,
+    ProxyConfig,  # ProxyConfigError,
     ReverseProxyRequires,
 )
 from lib_foundry import FoundryHelper
@@ -41,7 +40,7 @@ class FoundryvttCharm(CharmBase):
         self.state.set_default(started=False)
         # -- relations --
         self.proxy = ReverseProxyRequires(self, "reverseproxy")
-        self.framework.observe(self.proxy.on.proxy_ready, self.on_proxy_ready)
+        self.framework.observe(self.proxy.on.proxy_connected, self.on_proxy_connected)
         # Setup helper
         self.helper = FoundryHelper(self.model.config, self.state)
 
@@ -136,8 +135,8 @@ class FoundryvttCharm(CharmBase):
     # - ssl: (Optional) Connect to the backend via ssl regardless of the port
     # - ssl-verify: (Optional) Boolean, set to True to check SSL certs. False will not check
     # - check: (Optional) perform port availability check, defaults to True set False to not check
-    def on_proxy_ready(self, event):
-        """Handle proxy ready event."""
+    def on_proxy_connected(self, event):
+        """Handle proxy connected event."""
         config = {
             "mode": "http",
             "subdomain": "foundry",
@@ -145,9 +144,11 @@ class FoundryvttCharm(CharmBase):
             "internal_host": socket.getfqdn(),
             "internal_port": 30000,
         }
-        logging.info("Proxy is ready, configuring: {}".format(config))
+        logging.info("Proxy is connected, configuring: {}".format(config))
         proxy_config = ProxyConfig(config)
+        logging.debug("Proxy config: {}".format(proxy_config))
         self.proxy.set_proxy_config(proxy_config)
+        logging.debug("Proxy set_proxy_config conplete")
 
     def _defer_once(self, event):
         """Defer the given event, but only once."""
