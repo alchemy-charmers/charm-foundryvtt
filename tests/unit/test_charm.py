@@ -69,6 +69,10 @@ class TestCharm(OperatorTestCase):
     def test_proxy(self):
         """Test emitting reversepoxy join."""
         self.charm.state.started = True
+        relation = mock.MagicMock()
+        relation.id = "mock_relation_id"
+        relation.name = "mock_relation_name"
+        self.charm.proxy._relation = relation
         self.emit("reverseproxy_relation_joined")
 
 
