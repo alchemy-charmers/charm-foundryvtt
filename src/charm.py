@@ -130,11 +130,17 @@ class FoundryvttCharm(CharmBase):
 
             return
 
+        host = None
+        if self.model.config["proxy_viq_fqdn"]:
+            host = socket.getfqdn()
+        else:
+            host = self.model.get_binding("reverseproxy").network.ingress_address
+
         config = {
             "mode": "http",
-            "subdomain": "foundry",
-            "external_port": 80,
-            "internal_host": socket.getfqdn(),
+            "subdomain": self.model.config["proxy_subdomain"],
+            "external_port": self.model.config["proxy_port"],
+            "internal_host": host,
             "internal_port": 30000,
         }
         logging.info("Proxy is connected, configuring: {}".format(config))

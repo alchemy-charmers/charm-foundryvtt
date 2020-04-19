@@ -5,7 +5,7 @@ options:
         default: "foundry"
     proxy_port:
         type: int
-        description: "Extrenal port to request from the proxy. Default to 443 for TLS"
+        description: "External port to request from the proxy. Default to 443 for TLS"
         default: 443
     proxy_via_fqdn:
         type: boolean

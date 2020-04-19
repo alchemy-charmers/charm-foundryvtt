@@ -4,6 +4,7 @@ applications:
     foundry-vtt:
         charm: ../../../../
         num_units: 1
+        proxy_port: 80
     haproxy:
         charm: cs:~pirate-charmers/haproxy
         num_units: 1
