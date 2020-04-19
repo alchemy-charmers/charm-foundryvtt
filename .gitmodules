@@ -4,3 +4,6 @@
 [submodule "mod/charm-helpers"]
 	path = mod/charm-helpers
 	url = https://github.com/juju/charm-helpers.git
+[submodule "mod/interface-reverseproxy"]
+	path = mod/interface-reverseproxy
+	url = https://github.com/alchemy-charmers/interface-reverseproxy.git

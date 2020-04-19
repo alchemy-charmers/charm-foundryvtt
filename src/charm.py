@@ -6,10 +6,16 @@
 """Operator Charm main library."""
 # Load modules from lib directory
 import logging
+import socket
 from zipfile import BadZipFile
 
 import setuppath  # noqa:F401
 from charmhelpers.core import host
+from interface_reverseproxy.operator_requires import (
+    ProxyConfig,
+    # ProxyConfigError,
+    ReverseProxyRequires,
+)
 from lib_foundry import FoundryHelper
 from ops.charm import CharmBase
 from ops.framework import StoredState
@@ -33,6 +39,9 @@ class FoundryvttCharm(CharmBase):
         self.state.set_default(installed=False)
         self.state.set_default(configured=False)
         self.state.set_default(started=False)
+        # -- relations --
+        self.proxy = ReverseProxyRequires(self, "reverseproxy")
+        self.framework.observe(self.proxy.on.proxy_ready, self.on_proxy_ready)
         # Setup helper
         self.helper = FoundryHelper(self.model.config, self.state)
 
@@ -113,6 +122,32 @@ class FoundryvttCharm(CharmBase):
         self.unit.status = ActiveStatus("Unit is ready")
         self.state.started = True
         logging.info("Started")
+
+    # - mode: (Optional) set 'tcp' or 'http' routing, defaults to 'http'
+    # - urlbase: (Optional if subdomain is provided) the base url to redirect to his charm, including leading /
+    # - acl-local: (Optional) restrict access to local ip address ranges for this backend
+    # - rewrite-path: (Optional) remove the urlbase from the path
+    # - subdomain: (Optional if urlbase is provided) a subdomain to redirect to this charm
+    # - external_port: the external port to listen on
+    # - internal_host: the internal host to redirect to
+    # - internal_port: the internal port to redirect to
+    # - group_id: (Optional) all relations with a matching group id will share the same server pool. urlbase, subdomain, and external_port should match on all members of the group
+    # - proxypass: (Optional) set Forward-For and Forward-Proto headers
+    # - ssl: (Optional) Connect to the backend via ssl regardless of the port
+    # - ssl-verify: (Optional) Boolean, set to True to check SSL certs. False will not check
+    # - check: (Optional) perform port availability check, defaults to True set False to not check
+    def on_proxy_ready(self, event):
+        """Handle proxy ready event."""
+        config = {
+            "mode": "http",
+            "subdomain": "foundry",
+            "external_port": 80,
+            "internal_host": socket.getfqdn(),
+            "internal_port": 30000,
+        }
+        logging.info("Proxy is ready, configuring: {}".format(config))
+        proxy_config = ProxyConfig(config)
+        self.proxy.set_proxy_config(proxy_config)
 
     def _defer_once(self, event):
         """Defer the given event, but only once."""

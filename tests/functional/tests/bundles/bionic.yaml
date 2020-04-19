@@ -4,3 +4,9 @@ applications:
     foundry-vtt:
         charm: ../../../../
         num_units: 1
+    haproxy:
+        charm: cs:~pirate-charmers/haproxy
+        num_units: 1
+relations:
+- - haproxy:reverseproxy
+  - foundry-vtt:reverseproxy

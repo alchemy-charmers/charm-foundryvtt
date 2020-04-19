@@ -16,9 +16,9 @@ resources:
         filename: foundryvtt.zip
         description: foundry zip file
 # -- example relations, delete if unneeded
-#requires:
-#    db:
-#        interface: mysql
+requires:
+    reverseproxy:
+        interface: reverseproxy
 #provides:
 #    website:
 #        interface: http
