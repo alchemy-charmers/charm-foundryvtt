@@ -131,10 +131,10 @@ class FoundryvttCharm(CharmBase):
             return
 
         host = None
-        if self.model.config["proxy_viq_fqdn"]:
+        if self.model.config["proxy_via_fqdn"]:
             host = socket.getfqdn()
         else:
-            host = self.model.get_binding("reverseproxy").network.ingress_address
+            host = str(self.model.get_binding("reverseproxy").network.ingress_address)
 
         config = {
             "mode": "http",

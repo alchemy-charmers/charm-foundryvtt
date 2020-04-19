@@ -66,6 +66,11 @@ class TestCharm(OperatorTestCase):
         self.emit("start")
         self.assertEqual(self.charm.state.started, True)
 
+    def test_proxy(self):
+        """Test emitting reversepoxy join."""
+        self.charm.state.started = True
+        self.emit("reverseproxy_relation_joined")
+
 
 if __name__ == "__main__":
     unittest.main()
