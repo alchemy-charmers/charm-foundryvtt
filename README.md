@@ -31,6 +31,31 @@ This will make FounryVTT available at the subdomain `foundry` on HAProxy on port
 connect at `https://foundry.<haproxyip>`. Serving Foundry via TLS on port 443 will requires a
 certificate which the HAProxy charm can register for you via letsencrypt. See the [HAProxy charm](https://jaas.ai/u/pirate-charmers/haproxy) for details.
 
+For **local** testing you can use the following bundle to deploy to a
+local provider and test out FoundryVTT before deploying to your final server.
+
+```yaml
+series: bionic
+applications:
+    foundry:
+        charm: cs:~pirate-charmers/foundryvtt
+        num_units: 1
+        options:
+            proxy_port: 80
+        resources:
+            foundryvtt: ./foundryvtt-0.5.5.zip
+    haproxy:
+        charm: cs:~pirate-charmers/haproxy
+        num_units: 1
+relations:
+- - haproxy:reverseproxy
+  - foundry:reverseproxy
+```
+Place your foundryvtt.zip file in the same folder as the above bundle.yaml and
+deploy with `juju deploy ./bundle.yaml`
+
+You can access using xip.io at: `http://<haproxyip>.xip.io`
+
 There are config settings on this charm to allow some customization of the proxy
 configuration.
  - proxy_subdomain: Can be used to customize the subdomain if you run multiple servers.
