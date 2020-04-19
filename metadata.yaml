@@ -3,9 +3,9 @@ summary: Describe your charm here
 maintainers:
     - Chris Sanders <sanders.chris@gmail.com>
 description: |
-    A nice long description of what the product does and any
-    high level information about how the charm provides the product,
-    on which platform, etc.
+    Foundry VTT is a standalone application built for experiencing multiplayer tabletop RPGs
+    using a feature-rich and modern self-hosted application where your players connect
+    directly through the browser.
 tags:
     - misc
 series:
