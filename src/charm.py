@@ -31,15 +31,24 @@ class FoundryvttCharm(CharmBase):
         self.framework.observe(self.on.install, self.on_install)
         self.framework.observe(self.on.start, self.on_start)
         self.framework.observe(self.on.config_changed, self.on_config_changed)
+        self.framework.observe(self.on.upgrade_charm, self.on_upgrade_charm)
         # -- initialize states --
         self.state.set_default(installed=False)
         self.state.set_default(configured=False)
         self.state.set_default(started=False)
+        self.state.set_default(enabled=False)
         # -- relations --
         self.proxy = ReverseProxyRequires(self, "reverseproxy")
         self.framework.observe(self.proxy.on.proxy_connected, self.on_proxy_connected)
         # Setup helper
         self.helper = FoundryHelper(self.model.config, self.state)
+
+    def on_upgrade_charm(self, event):
+        """Handle upgrade event."""
+
+        if not self.state.enabled:
+            host.service("enable", self.helper.service_name)
+            self.state.enabled = True
 
     def on_install(self, event):
         """Handle install state."""
@@ -93,9 +102,10 @@ class FoundryvttCharm(CharmBase):
 
         if self.state.started:
             # Stop if necessary for reconfig
-            logging.info(
-                "Stopping for configuration, event handle: {}".format(event.handle)
-            )
+            pass
+            # logging.info(
+            #     "Stopping for configuration, event handle: {}".format(event.handle)
+            # )
         # Configure the software
         logging.info("Configuring")
         self.state.configured = True
@@ -114,9 +124,11 @@ class FoundryvttCharm(CharmBase):
             return
         self.unit.status = MaintenanceStatus("Starting charm software")
         # Start software
+        host.service("enable", self.helper.service_name)
         host.service_start(self.helper.service_name)
         self.unit.status = ActiveStatus("Unit is ready")
         self.state.started = True
+        self.state.enabled = True
         logging.info("Started")
 
     def on_proxy_connected(self, event):
@@ -131,6 +143,7 @@ class FoundryvttCharm(CharmBase):
             return
 
         host = None
+
         if self.model.config["proxy_via_fqdn"]:
             host = socket.getfqdn()
         else:

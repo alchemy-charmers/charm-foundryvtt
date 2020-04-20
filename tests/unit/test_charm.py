@@ -74,6 +74,23 @@ class TestCharm(OperatorTestCase):
         relation.name = "mock_relation_name"
         self.charm.proxy._relation = relation
         self.emit("reverseproxy_relation_joined")
+        # Setting relation does a get followed by a set of the data
+        get_item = relation.data.__getitem__.mock_calls[1]
+        # The key to set should be config
+        self.assertEqual(get_item.args[0], "config")
+        # The value should include expected JSON strings
+        self.assertIn('"mode": "http"', get_item.args[1])
+        self.assertIn('"subdomain": "foundry"', get_item.args[1])
+        self.assertIn('"external_port": 443', get_item.args[1])
+        self.assertIn('"internal_port": 30000', get_item.args[1])
+        self.assertIn('"check": true', get_item.args[1])
+        self.assertIn('"urlbase": null', get_item.args[1])
+
+    def test_upgrade_charm(self):
+        """Test emitting upgrade charm."""
+        self.assertEqual(self.charm.state.enabled, False)
+        self.emit("upgrade_charm")
+        self.assertEqual(self.charm.state.enabled, True)
 
 
 if __name__ == "__main__":
