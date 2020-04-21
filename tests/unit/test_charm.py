@@ -39,7 +39,7 @@ class TestCharm(OperatorTestCase):
         tmp_data = tempfile.NamedTemporaryFile(
             prefix="data_", dir=self.tmpdir.name
         ).name
-        self.charm.helper.data_path = Path(tmp_data)
+        self.charm.helper.default_data_path = Path(tmp_data)
 
         # Setup a tmpfile for service path
         tmp_service = tempfile.NamedTemporaryFile(
@@ -88,7 +88,13 @@ class TestCharm(OperatorTestCase):
 
     def test_upgrade_charm(self):
         """Test emitting upgrade charm."""
+        # Not enabled
         self.assertEqual(self.charm.state.enabled, False)
+        # Do not enable if charm hasn't been started yet
+        self.emit("upgrade_charm")
+        self.assertEqual(self.charm.state.enabled, False)
+        # Enable if charm is started but was not enabled
+        self.charm.state.started = True
         self.emit("upgrade_charm")
         self.assertEqual(self.charm.state.enabled, True)
 

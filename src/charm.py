@@ -7,6 +7,7 @@
 # Load modules from lib directory
 import logging
 import socket
+import subprocess
 from zipfile import BadZipFile
 
 import setuppath  # noqa:F401
@@ -37,6 +38,7 @@ class FoundryvttCharm(CharmBase):
         self.state.set_default(configured=False)
         self.state.set_default(started=False)
         self.state.set_default(enabled=False)
+        self.state.set_default(current_data_path=False)
         # -- relations --
         self.proxy = ReverseProxyRequires(self, "reverseproxy")
         self.framework.observe(self.proxy.on.proxy_connected, self.on_proxy_connected)
@@ -46,9 +48,12 @@ class FoundryvttCharm(CharmBase):
     def on_upgrade_charm(self, event):
         """Handle upgrade event."""
 
-        if not self.state.enabled:
+        if self.state.started and not self.state.enabled:
             host.service("enable", self.helper.service_name)
             self.state.enabled = True
+
+        if self.state.installed and not self.state.current_data_path:
+            self.state.current_data_path = str(self.helper.default_data_path)
 
     def on_install(self, event):
         """Handle install state."""
@@ -82,7 +87,7 @@ class FoundryvttCharm(CharmBase):
         logging.info("Installing dependencies")
         self.helper.add_sources()
         self.helper.install_dependencies()
-        self.helper.install_systemd_service()
+        self.helper.render_systemd_service()
         self.unit.status = MaintenanceStatus("Install complete")
         logging.info("Install of software complete")
         self.state.installed = True
@@ -100,14 +105,24 @@ class FoundryvttCharm(CharmBase):
 
             return
 
-        if self.state.started:
-            # Stop if necessary for reconfig
-            pass
-            # logging.info(
-            #     "Stopping for configuration, event handle: {}".format(event.handle)
-            # )
+        if self.helper.needs_data_migration:
+            self.unit.status = MaintenanceStatus("Reloacting data direcotry")
+
+            if self.state.started:
+                # Stop if necessary for reconfig
+                logging.info("Stopping to move data path")
+                host.service_stop(self.helper.service_name)
+            self.helper.migrate_data()
+            self.helper.render_systemd_service()
+            subprocess.check_call(["systemctl", "daemon-reload"])
+
+            if self.state.started:
+                logging.info("Restarting from data path migration")
+                host.service_start(self.helper.service_name)
+                self.unit.status = ActiveStatus("Unit is ready")
+
         # Configure the software
-        logging.info("Configuring")
+        logging.info("Configuring complete")
         self.state.configured = True
 
     def on_start(self, event):

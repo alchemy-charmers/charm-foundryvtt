@@ -1,4 +1,8 @@
 options:
+    custom_data_path:
+        type: string
+        description: "A custom location to move the data directory to. This can be useful if you want to store your data directory on network mount or seperate disk."
+        default: 
     proxy_subdomain:
         type: string
         description: "Subdomain to register with reverse proxy"

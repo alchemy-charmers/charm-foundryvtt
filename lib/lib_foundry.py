@@ -5,7 +5,6 @@
 # Distributed under terms of the GPL license.
 """Foundry Charm support library."""
 
-# import base64
 import logging
 import zipfile
 from pathlib import Path
@@ -24,7 +23,7 @@ class FoundryHelper:
         self.charm_config = config
         self.state = state
         self.install_path = Path("/opt/foundry/vtt")
-        self.data_path = Path("/opt/foundry/userdata")
+        self.default_data_path = Path("/opt/foundry/userdata")
         self.service_file = Path("/etc/systemd/system/foundryvtt.service")
         self.service_name = "foundryvtt.service"
         self.node_version = "12.x"
@@ -32,13 +31,13 @@ class FoundryHelper:
             "nodejs",
             "libssl-dev",
         ]
-        # self.service_name = "snap.cloudstats.cloudstats.service"
 
     def install_zip(self, zip_path):
         """Install the zip file."""
-        # TODO: Create a system user so this doesn't run as root?
         self.install_path.mkdir(parents=True, exist_ok=True)
-        self.data_path.mkdir(parents=True, exist_ok=True)
+        self.default_data_path.mkdir(parents=True, exist_ok=True)
+        if not self.state.current_data_path:
+            self.state.current_data_path = str(self.default_data_path)
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
             zip_ref.extractall(self.install_path)
 
@@ -59,9 +58,35 @@ class FoundryHelper:
         """Install dependencies."""
         apt_install(self.dependencies, fatal=True)
 
-    def install_systemd_service(self):
+    def render_systemd_service(self):
         """Install systemd service file."""
         context = {}
         context["install_path"] = self.install_path
-        context["data_path"] = self.data_path
+        context["data_path"] = self.state.current_data_path
         templating.render(self.service_name, self.service_file, context, perms=0o440)
+
+    def migrate_data(self):
+        """Migrate data to a new path."""
+        if not self.needs_data_migration:
+            logging.error("Cowardly refusing to migrate data unnecessarily")
+            return
+        data_path = Path(self.state.current_data_path)
+        if not self.charm_config.get("custom_data_path"):
+            # Migrate current -> default
+            target_path = Path(self.default_data_path)
+        else:
+            # Migrate current -> custom
+            target_path = Path(self.charm_config["custom_data_path"])
+        data_path.rename(target_path)
+        self.state.current_data_path = str(target_path)
+
+    @property
+    def needs_data_migration(self):
+        """Returns true if the datapath config has changed and needs to be migrated."""
+        custom_path = self.charm_config.get("custom_data_path")
+        if custom_path:
+            if custom_path != self.state.current_data_path:
+                return True
+        elif self.state.current_data_path != self.default_data_path:
+            return True
+        return False
