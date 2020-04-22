@@ -9,10 +9,14 @@ import logging
 import zipfile
 from pathlib import Path
 
-from charmhelpers.core import host
+from charmhelpers.core import host, templating
 from charmhelpers.fetch import add_source, apt_install, apt_update
 
-from charmhelpers.core import templating
+
+class PathError(Exception):
+    """Raise if there is an issue with a path."""
+
+    pass
 
 
 class FoundryHelper:
@@ -36,6 +40,7 @@ class FoundryHelper:
         """Install the zip file."""
         self.install_path.mkdir(parents=True, exist_ok=True)
         self.default_data_path.mkdir(parents=True, exist_ok=True)
+
         if not self.state.current_data_path:
             self.state.current_data_path = str(self.default_data_path)
         with zipfile.ZipFile(zip_path, "r") as zip_ref:
@@ -67,16 +72,23 @@ class FoundryHelper:
 
     def migrate_data(self):
         """Migrate data to a new path."""
+
         if not self.needs_data_migration:
             logging.error("Cowardly refusing to migrate data unnecessarily")
+
             return
         data_path = Path(self.state.current_data_path)
+
         if not self.charm_config.get("custom_data_path"):
             # Migrate current -> default
-            target_path = Path(self.default_data_path)
+            target_path = self.default_data_path
+            self.default_data_path.mkdir(parents=True, exist_ok=True)
         else:
             # Migrate current -> custom
             target_path = Path(self.charm_config["custom_data_path"])
+
+        if not target_path.is_dir():
+            raise PathError("Destination directory does not exist")
         data_path.rename(target_path)
         self.state.current_data_path = str(target_path)
 
@@ -84,9 +96,11 @@ class FoundryHelper:
     def needs_data_migration(self):
         """Returns true if the datapath config has changed and needs to be migrated."""
         custom_path = self.charm_config.get("custom_data_path")
+
         if custom_path:
             if custom_path != self.state.current_data_path:
                 return True
         elif self.state.current_data_path != self.default_data_path:
             return True
+
         return False

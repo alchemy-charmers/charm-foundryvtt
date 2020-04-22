@@ -13,7 +13,7 @@ from zipfile import BadZipFile
 import setuppath  # noqa:F401
 from charmhelpers.core import host
 from interface_reverseproxy.operator_requires import ProxyConfig, ReverseProxyRequires
-from lib_foundry import FoundryHelper
+from lib_foundry import FoundryHelper, PathError
 from ops.charm import CharmBase
 from ops.framework import StoredState
 from ops.main import main
@@ -112,7 +112,15 @@ class FoundryvttCharm(CharmBase):
                 # Stop if necessary for reconfig
                 logging.info("Stopping to move data path")
                 host.service_stop(self.helper.service_name)
-            self.helper.migrate_data()
+            try:
+                self.helper.migrate_data()
+            except (PathError, OSError) as e:
+                if self.state.started:
+                    host.service_start(self.helper.service_name)
+                logging.error("Data move error: {}".format(e))
+                self.unit.status = BlockedStatus("{}".format(e))
+
+                return
             self.helper.render_systemd_service()
             subprocess.check_call(["systemctl", "daemon-reload"])
 
