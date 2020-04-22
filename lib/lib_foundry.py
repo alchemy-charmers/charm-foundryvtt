@@ -6,6 +6,7 @@
 """Foundry Charm support library."""
 
 import logging
+import shutil
 import zipfile
 from pathlib import Path
 
@@ -89,7 +90,7 @@ class FoundryHelper:
 
         if not target_path.is_dir():
             raise PathError("Destination directory does not exist")
-        data_path.rename(target_path)
+        shutil.move(str(data_path), str(target_path))
         self.state.current_data_path = str(target_path)
 
     @property
