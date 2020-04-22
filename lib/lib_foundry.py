@@ -90,6 +90,8 @@ class FoundryHelper:
 
         if not target_path.is_dir():
             raise PathError("Destination directory does not exist")
+        if any(target_path.iterdir()):
+            raise PathError("Destination directory is not empty")
         shutil.move(str(data_path), str(target_path))
         self.state.current_data_path = str(target_path)
 
@@ -101,7 +103,7 @@ class FoundryHelper:
         if custom_path:
             if custom_path != self.state.current_data_path:
                 return True
-        elif self.state.current_data_path != self.default_data_path:
+        elif self.state.current_data_path != str(self.default_data_path):
             return True
 
         return False

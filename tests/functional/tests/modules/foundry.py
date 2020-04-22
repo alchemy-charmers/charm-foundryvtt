@@ -67,7 +67,9 @@ class ConfigTests(TestBase):
         )
         try:
             zaza.model.block_until_file_missing(
-                self.application_name, "/opt/foundry/userdata/Config/options.json", timeout=30,
+                self.application_name,
+                "/opt/foundry/userdata/Config/options.json",
+                timeout=30,
             )
             logging.info("default path removed")
         except concurrent.futures._base.TimeoutError:
@@ -87,18 +89,52 @@ class ConfigTests(TestBase):
     def test02_path_not_empty(self):
         """Test moving to a non-empty directory."""
         zaza.model.set_application_config(
-            self.application_name, {"custom_data_path": "/home/ubuntu"}
+            self.application_name, {"custom_data_path": "/opt/foundry/vtt"}
         )
         try:
             zaza.model.block_until_unit_wl_status(
                 "foundry-vtt/0", "blocked", timeout=30,
             )
-            unit = zaza.model.get_unit_from_name("foundry-vtt/0", model_name=self.model_name)
-            assert "Directory not empty" in unit.workload_status_message
+            unit = zaza.model.get_unit_from_name(
+                "foundry-vtt/0", model_name=self.model_name
+            )
+            assert "Destination directory is not empty" in unit.workload_status_message
             logging.info("Verified data path blocks on non-empty directory")
         except concurrent.futures._base.TimeoutError:
             self.fail("Timed out waiting for test!")
         zaza.model.set_application_config("foundry-vtt", {"custom_data_path": ""})
+        try:
+            zaza.model.block_until_file_has_contents(
+                "foundry-vtt",
+                "/opt/foundry/userdata/Config/options.json",
+                '"port": 30000',
+                timeout=30,
+            )
+            logging.info("default path verified")
+        except concurrent.futures._base.TimeoutError:
+            self.fail("Timed out waiting for test.")
+
+    def test03_path_not_empty(self):
+        """Test moving to path that doesn't exist."""
+        zaza.model.set_application_config(
+            self.application_name, {"custom_data_path": "/tmp/does-not-exist"}
+        )
+        try:
+            zaza.model.block_until_unit_wl_status(
+                "foundry-vtt/0", "blocked", timeout=30,
+            )
+            unit = zaza.model.get_unit_from_name(
+                "foundry-vtt/0", model_name=self.model_name
+            )
+            assert (
+                "Destination directory does not exist" in unit.workload_status_message
+            )
+            logging.info("Verified data path blocks on missing directory")
+        except concurrent.futures._base.TimeoutError:
+            self.fail("Timed out waiting for test!")
+        zaza.model.set_application_config(
+            self.application_name, {"custom_data_path": ""}
+        )
         try:
             zaza.model.block_until_file_has_contents(
                 "foundry-vtt",

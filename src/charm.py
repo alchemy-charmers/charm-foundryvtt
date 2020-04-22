@@ -19,6 +19,8 @@ from ops.framework import StoredState
 from ops.main import main
 from ops.model import ActiveStatus, BlockedStatus, MaintenanceStatus, ModelError
 
+DATA_MOVE_ERROR = "Data move error"
+
 
 class FoundryvttCharm(CharmBase):
     """Class reprisenting this Operator charm."""
@@ -39,6 +41,7 @@ class FoundryvttCharm(CharmBase):
         self.state.set_default(started=False)
         self.state.set_default(enabled=False)
         self.state.set_default(current_data_path=False)
+        self.state.set_default(status_reason=None)
         # -- relations --
         self.proxy = ReverseProxyRequires(self, "reverseproxy")
         self.framework.observe(self.proxy.on.proxy_connected, self.on_proxy_connected)
@@ -119,6 +122,7 @@ class FoundryvttCharm(CharmBase):
                     host.service_start(self.helper.service_name)
                 logging.error("Data move error: {}".format(e))
                 self.unit.status = BlockedStatus("{}".format(e))
+                self.state.status_reason = DATA_MOVE_ERROR
 
                 return
             self.helper.render_systemd_service()
@@ -128,6 +132,12 @@ class FoundryvttCharm(CharmBase):
                 logging.info("Restarting from data path migration")
                 host.service_start(self.helper.service_name)
                 self.unit.status = ActiveStatus("Unit is ready")
+        else:
+            # No migration necessary, but status might still be blocked from a config-change
+            # of the custom data path.
+            if self.state.status_reason == DATA_MOVE_ERROR:
+                self.unit.status = ActiveStatus("Unit is ready")
+                self.state.status_reason = None
 
         # Configure the software
         logging.info("Configuring complete")

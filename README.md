@@ -64,6 +64,9 @@ configuration.
  - proxy_via_fqdn: Setting to false will register the IP instead of the fqdn with HAProxy.
   This is useful if you are installing in an environment that lacks DNS but has static IP
   assignments.
+ - custom_data_path: Allows you to move the data directory to another location, a network
+   mount or large 2nd drive for example. This can be changed post-deployment but the folder
+   must exist it will not be created for you.
 
 Contact
 -------
