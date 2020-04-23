@@ -92,7 +92,8 @@ class FoundryHelper:
             raise PathError("Destination directory does not exist")
         if any(target_path.iterdir()):
             raise PathError("Destination directory is not empty")
-        shutil.move(str(data_path), str(target_path))
+        for item in data_path.iterdir():
+            shutil.move(str(item.resolve()), str(target_path))
         self.state.current_data_path = str(target_path)
 
     @property

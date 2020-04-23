@@ -50,11 +50,12 @@ class ConfigTests(TestBase):
 
     def test01_change_data_path(self):
         """Test moving the data_path."""
+        zaza.model.run_on_unit("foundry-vtt/0", 'echo "test_data" | sudo tee -a /opt/foundry/userdata/testfile')
         try:
             zaza.model.block_until_file_has_contents(
                 self.application_name,
-                "/opt/foundry/userdata/Config/options.json",
-                '"port": 30000',
+                "/opt/foundry/userdata/testfile",
+                'test_data',
                 timeout=30,
             )
             logging.info("default path verified")
@@ -68,7 +69,7 @@ class ConfigTests(TestBase):
         try:
             zaza.model.block_until_file_missing(
                 self.application_name,
-                "/opt/foundry/userdata/Config/options.json",
+                "/opt/foundry/userdata/testfile",
                 timeout=30,
             )
             logging.info("default path removed")
@@ -78,8 +79,8 @@ class ConfigTests(TestBase):
         try:
             zaza.model.block_until_file_has_contents(
                 self.application_name,
-                "/tmp/data/Config/options.json",
-                '"port": 30000',
+                "/tmp/data/testfile",
+                'test_data',
                 timeout=30,
             )
             logging.info("custom path verified")
@@ -106,8 +107,8 @@ class ConfigTests(TestBase):
         try:
             zaza.model.block_until_file_has_contents(
                 "foundry-vtt",
-                "/opt/foundry/userdata/Config/options.json",
-                '"port": 30000',
+                "/opt/foundry/userdata/testfile",
+                'test_data',
                 timeout=30,
             )
             logging.info("default path verified")
@@ -138,8 +139,8 @@ class ConfigTests(TestBase):
         try:
             zaza.model.block_until_file_has_contents(
                 "foundry-vtt",
-                "/opt/foundry/userdata/Config/options.json",
-                '"port": 30000',
+                "/opt/foundry/userdata/testfile",
+                'test_data',
                 timeout=30,
             )
             logging.info("default path verified")
