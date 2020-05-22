@@ -6,7 +6,7 @@ Wants=network.target
 [Service]
 ExecStart=/usr/bin/node {{install_path}}/resources/app/main.js --dataPath={{data_path}}
 SyslogIdentifier=foundryvtt
-Restart=on-failure
+Restart=always
 TimeoutStopSec=30
 Type=simple
 

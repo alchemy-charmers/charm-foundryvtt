@@ -58,6 +58,10 @@ class FoundryvttCharm(CharmBase):
         if self.state.installed and not self.state.current_data_path:
             self.state.current_data_path = str(self.helper.default_data_path)
 
+        if self.state.installed:
+            self.helper.render_systemd_service()
+            subprocess.check_call(["systemctl", "daemon-reload"])
+
     def on_install(self, event):
         """Handle install state."""
         self.unit.status = MaintenanceStatus("Installing charm software")
